@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geblokkeerd · SOC · BOA Portaal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root { --rood: #c41212; --diep: #2a0004; --inkt: #1a0002; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      color: #fff;
+      font-family: "Segoe UI", "Avenir Next", sans-serif;
+      background:
+        radial-gradient(circle at 50% 18%, #ff3b3b 0%, var(--rood) 28%, #6d0710 62%, var(--inkt) 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(-18deg, rgba(0,0,0,.18) 0 14px, rgba(255,220,0,.16) 14px 28px);
+      height: 42px;
+      pointer-events: none;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,0,0,.08) 3px 4px);
+      pointer-events: none;
+      animation: adem 1.6s ease-in-out infinite;
+    }
+    @keyframes adem { 50% { opacity: .45; } }
+    main {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      padding: 72px 20px 48px;
+      gap: 14px;
+    }
+    .soc {
+      letter-spacing: .42em;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(52px, 12vw, 128px);
+      line-height: .88;
+      letter-spacing: -.04em;
+      font-weight: 800;
+      text-shadow: 0 10px 0 rgba(0,0,0,.25);
+    }
+    .zin { max-width: 38rem; margin: 0; font-size: 20px; line-height: 1.45; }
+    .plaat {
+      width: min(640px, 100%);
+      margin-top: 10px;
+      background: rgba(0,0,0,.38);
+      border: 1px solid rgba(255,255,255,.35);
+      padding: 18px 18px 8px;
+      text-align: left;
+    }
+    .plaat div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255,255,255,.18); padding: 10px 0; }
+    .plaat span { opacity: .75; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+    .plaat b { font-family: ui-monospace, "Courier New", monospace; font-size: 20px; font-weight: 700; }
+    a.wa {
+      display: inline-block;
+      margin-top: 8px;
+      background: #fff;
+      color: var(--diep);
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: .04em;
+      padding: 16px 22px;
+      font-size: 18px;
+    }
+    a.wa:hover { background: #ffe08a; }
+    .klein { max-width: 36rem; opacity: .9; font-size: 15px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="soc">Security Operations Center · BOA Portaal</p>
+    <h1 id="kop">GEBLOKKEERD</h1>
+    <p class="zin" id="zin">Uw verbinding wordt gecontroleerd.</p>
+    <div class="plaat">
+      <div><span>IP-adres</span><b id="ip">—</b></div>
+      <div><span>Referentie</span><b id="ref">—</b></div>
+      <div><span>Vastgesteld</span><b id="sinds">—</b></div>
+    </div>
+    <a class="wa" id="wa" hidden target="_blank" rel="noopener">Melding via WhatsApp</a>
+    <p class="klein" id="voet">Open pagina's en afgeschermde onderdelen zijn vanaf een geblokkeerd adres niet beschikbaar.</p>
+  </main>
+  <script>
+    const kop = document.getElementById("kop");
+    const zin = document.getElementById("zin");
+    const ip = document.getElementById("ip");
+    const ref = document.getElementById("ref");
+    const sinds = document.getElementById("sinds");
+    const wa = document.getElementById("wa");
+    const voet = document.getElementById("voet");
+    fetch("https://systeem.boaportaal.nl/.netlify/functions/ip", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ actie: "kijk" }),
+    }).then((res) => res.json()).then((data) => {
+      ip.textContent = data.ip || "onbekend";
+      if (!data.blok) {
+        kop.textContent = "GEEN BLOKKADE";
+        zin.textContent = "Dit IP-adres staat niet op de blokkadelijst van het Security Operations Center.";
+        ref.textContent = "—";
+        sinds.textContent = "—";
+        voet.textContent = "De portalen blijven bereikbaar. Een blokkade ontstaat pas na meerdere mislukte aanmeldpogingen.";
+        return;
+      }
+      const code = data.referentie || "SOC";
+      ref.textContent = code;
+      sinds.textContent = data.sinds ? new Date(data.sinds).toLocaleString("nl-NL") : "nu";
+      zin.textContent = "Uw verbinding is door het Security Operations Center om veiligheidsredenen geblokkeerd. Verdachte aanmeldpogingen zijn vastgesteld op dit IP-adres.";
+      voet.textContent = "Stuur een WhatsApp-bericht onder deze referentie. Zonder referentie wordt het verzoek niet in behandeling genomen. Het nummer is alleen voor deze melding: 06 449 122 82.";
+      const tekst = `Referentie ${code}. Mijn IP-adres is geblokkeerd op BOA Portaal. Ik vraag het Security Operations Center dit te beoordelen.`;
+      wa.href = `https://wa.me/31644912282?text=${encodeURIComponent(tekst)}`;
+      wa.hidden = false;
+    }).catch(() => {
+      zin.textContent = "De controle is nu niet bereikbaar. Vernieuw deze pagina.";
+    });
+  </script>
+</body>
+</html>
