@@ -81,7 +81,7 @@
       padding: 16px 22px;
       font-size: 18px;
     }
-    a.wa:hover { background: #ffe08a; }
+    a.wa[hidden] { display: none !important; }
     .klein { max-width: 36rem; opacity: .9; font-size: 15px; line-height: 1.5; }
   </style>
 </head>
@@ -95,7 +95,7 @@
       <div><span>Referentie</span><b id="ref">—</b></div>
       <div><span>Vastgesteld</span><b id="sinds">—</b></div>
     </div>
-    <a class="wa" id="wa" hidden target="_blank" rel="noopener">Melding via WhatsApp</a>
+    <a class="wa" id="wa" href="https://wa.me/31644912282" target="_blank" rel="noopener">Melding via WhatsApp</a>
     <p class="klein" id="voet">Open pagina's en afgeschermde onderdelen zijn vanaf een geblokkeerd adres niet beschikbaar.</p>
   </main>
   <script>
@@ -112,6 +112,12 @@
       body: JSON.stringify({ actie: "kijk" }),
     }).then((res) => res.json()).then((data) => {
       ip.textContent = data.ip || "onbekend";
+      const code = data.referentie || "";
+      const tekst = data.blok
+        ? `Referentie ${code}. Mijn IP-adres ${data.ip || ""} is geblokkeerd op BOA Portaal. Ik vraag het Security Operations Center dit te beoordelen.`
+        : `Mijn IP-adres is ${data.ip || "onbekend"}. Ik heb een melding voor het Security Operations Center van BOA Portaal.`;
+      wa.href = `https://wa.me/31644912282?text=${encodeURIComponent(tekst)}`;
+      wa.hidden = false;
       if (!data.blok) {
         kop.textContent = "GEEN BLOKKADE";
         zin.textContent = "Dit IP-adres staat niet op de blokkadelijst van het Security Operations Center.";
@@ -120,14 +126,10 @@
         voet.textContent = "De portalen blijven bereikbaar. Een blokkade ontstaat pas na meerdere mislukte aanmeldpogingen.";
         return;
       }
-      const code = data.referentie || "SOC";
-      ref.textContent = code;
+      ref.textContent = code || "SOC";
       sinds.textContent = data.sinds ? new Date(data.sinds).toLocaleString("nl-NL") : "nu";
       zin.textContent = "Uw verbinding is door het Security Operations Center om veiligheidsredenen geblokkeerd. Verdachte aanmeldpogingen zijn vastgesteld op dit IP-adres.";
       voet.textContent = "Stuur een WhatsApp-bericht onder deze referentie. Zonder referentie wordt het verzoek niet in behandeling genomen. Het nummer is alleen voor deze melding: 06 449 122 82.";
-      const tekst = `Referentie ${code}. Mijn IP-adres is geblokkeerd op BOA Portaal. Ik vraag het Security Operations Center dit te beoordelen.`;
-      wa.href = `https://wa.me/31644912282?text=${encodeURIComponent(tekst)}`;
-      wa.hidden = false;
     }).catch(() => {
       zin.textContent = "De controle is nu niet bereikbaar. Vernieuw deze pagina.";
     });
